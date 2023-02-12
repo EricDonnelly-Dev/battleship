@@ -40,20 +40,20 @@ Now we are going to make the game a little more realistic.
 
 1. - [x] Rewrite the code so that we use letters A-J and numbers 1-10. This will create a 100 unit grid.
 2. - [x] If you haven't already, create a function that builds the grid. This function will take a single number argument to build the grid accordingly. (i.e. buildGrid(3) will create a 3x3 grid (9 units), buildGrid(5) will create a 5x5 grid (25 units) buildGrid(10) creates a 10x10 (100 units), etc). 
-3. - [ ] The computer will now place multiple ships in this format:
-   1. - [ ] One two-unit ship 
-   2. - [ ] Two three-unit ships
-   3. - [ ] One four-unit ship 
-   4. - [ ] One five-unit ship
+3. - [x] The computer will now place multiple ships in this format:
+   1. - [x] One two-unit ship 
+   2. - [x] Two three-unit ships
+   3. - [x] One four-unit ship 
+   4. - [x] One five-unit ship
    
-4. - [ ] Keep in mind that your code cannot place two ships on intersecting paths 
+4. - [x] Keep in mind that your code cannot place two ships on intersecting paths 
    * Ship placement should be random (horizontally and vertically placed) and not manually placed by you in the code
    * Ships must be placed within the grid boundaries
    * The game works as before, except now, all ships must be destroyed to win
 
 ### 🛠 Requirements: Part 3 (Optional, but will take your skills to a whole new level).
 
-Instead of just printing "hit" or "miss" when you take a turn, have a GUI-based grid appear in the terminal. Use "O" for your misses and use "X" for your hits. After every turn, the grid will reprint with the proper data.
+- [x] Instead of just printing "hit" or "miss" when you take a turn, have a GUI-based grid appear in the terminal. Use "O" for your misses and use "X" for your hits. After every turn, the grid will reprint with the proper data.
 ![full-battleship.bmp](./img/battleship-grid-full.webp)
 
 ### 🛠 Requirements: Part 4 - Multiplayer (Optional)

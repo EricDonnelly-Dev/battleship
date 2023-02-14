@@ -1,7 +1,7 @@
 const rs = require("readline-sync");
 
 class Ship {
-    constructor(shipSize,shipName, orientation,startPos,endPos,shipLocation) {
+    constructor(shipSize,shipName, orientation, startPos =undefined, endPos = undefined , shipLocation =[] ) {
         this.shipSize = shipSize;
         this.shipName = shipName;
         this.orientation = orientation; // 1 means vertical 0 means horizontal
@@ -48,8 +48,11 @@ class GameBoard {
 
         function targetToMarker(target ,marker) {
             let rowIndex = target.toUpperCase().charCodeAt(0)-64;
-            board[rowIndex][target[1]] = marker;
-
+            let col = target[1];
+            if(target[2] === "0"){
+               col = 10;
+            }
+            board[rowIndex][col] = marker;
         }
 
         if (shipLocations.flat(1).includes(target.toUpperCase())) {
@@ -68,13 +71,16 @@ class GameBoard {
 rs.keyIn("Push Any Key to Start!",{hideEchoBack:true,mask:""});
 let playAgain = true;
 while (playAgain) {
-    const gameShips = [
-        new Ship(5,"carrier",0,undefined ,undefined ,[]),
-        new Ship(4,"destroyer",1,undefined ,undefined ,[]),
-        new Ship(3,"sub",1,undefined ,undefined ,[]),
-        new Ship(3,"light craft",0,undefined ,undefined ,[]),
-        new Ship(2,"tugboat",1,undefined ,undefined ,[])
-    ];
+    const gameShips =[];
+    [
+        [5,"carrier"],
+        [4,"destroyer"],
+        [3,"submarine"],
+        [3,"light craft"],
+        [2,"tugboat"]
+    ].forEach((ship) =>{
+        gameShips.push(new Ship(ship[0],ship[1],getRandomIntInclusive(0,1)));
+    });
     const totalShipHealth = gameShips.reduce((acc,ship)=> acc+ ship.shipSize ,0);
     const game = new GameBoard(10,totalShipHealth);
     let playBoard = game.startGame();
@@ -83,37 +89,30 @@ while (playAgain) {
     playAgain = rs.keyInYN("You have destroyed all the battleships.\n Would you like to play again?");
 }
 
-function checkForOverlaps(startPoint,endPoint,board,ship) {
-    let shipSpaceFree;
-    if( ship.orientation === 0) {
-        for (let i = startPoint[1]; i <= endPoint[1]; i++) {
-            board[startPoint[0]][i] !== " " ? shipSpaceFree = false : shipSpaceFree =true;
+function checkForOverlaps(startPoint,endPoint,ships,ship) {
+    let shipSpaceFree = false;
+    const params = ship.orientation === 0 ? 1:0;
+        for (let i = startPoint[params]; i <= endPoint[params]; i++) {
+            const vals = ship.orientation === 0 ? [startPoint[0],i] :[i,startPoint[1]];
+            ships.flat(1).includes(String.fromCharCode(vals[0]+64)+vals[1] ,0)
+                ? shipSpaceFree = false
+                : shipSpaceFree = true;
             if (!shipSpaceFree) return false;
         }
-    }
-    else {
-        for (let i = startPoint[0]; i <= endPoint[0]; i++) {
-            board[i][startPoint[1]] !== " " ? shipSpaceFree = false : shipSpaceFree =true;
-            if (!shipSpaceFree) return false;
-        }
-    }
     return shipSpaceFree;
 }
 
-function addShipNameToBoard(startPoint,endPoint,board,ship){
-    if( ship.orientation === 0) for (let i = startPoint[1]; i <= endPoint[1]; i++) {
-        // board[startPoint[0]][i] = ship.shipName;
-        ship.shipLocation.push(String.fromCharCode(startPoint[0]+64)+i)
-    }
-    else for (let i = startPoint[0]; i <= endPoint[0]; i++) {
-        // board[i][startPoint[1]] = ship.shipName;
-        ship.shipLocation.push(String.fromCharCode(i+64)+startPoint[1])
-    }
-
+function addShipToBoard(startPoint,endPoint,game,ship){
+    const params = ship.orientation === 0 ? 1:0;
+    for (let i = startPoint[params]; i <= endPoint[params]; i++) {
+        const values = ship.orientation === 0
+            ? [startPoint[0]+64,i]
+            : [i+64,startPoint[1]];
+            ship.shipLocation.push(String.fromCharCode(values[0]) + values[1]);
+        }
 }
 function addShips(board,gameShips){
     let ships =[];
-
     function selectRandomStart(ship) {
         let randomCol = getRandomIntInclusive(1, board.length - 1);
         let randomRow = getRandomIntInclusive(1, board.length - 1);
@@ -121,50 +120,34 @@ function addShips(board,gameShips){
         ship.startPos = rowLetter + randomCol;
         return {randomCol, randomRow, rowLetter};
     }
-
     for (const ship of gameShips) {
         let fullShipSpace = true;
-        if (ship.orientation === 0) {
-            while (fullShipSpace) {
-                let {randomCol, randomRow, rowLetter} = selectRandomStart(ship);
-                let shipFits = (randomCol+ship.shipSize) < board.length
-                shipFits ? ship.endPos = rowLetter+(randomCol+(ship.shipSize-1)): ship.endPos = rowLetter + (randomCol - (ship.shipSize-1) )
-                if (shipFits) {
-                    if(checkForOverlaps([randomRow, ship.startPos[1]], [randomRow, ship.endPos[1]], board,ship)) {
-                        addShipNameToBoard([randomRow, ship.startPos[1]], [randomRow, ship.endPos[1]], board, ship);
-                        fullShipSpace = false;
-                    }
-                }
-                else {
-                    if (checkForOverlaps([randomRow, ship.endPos[1]], [randomRow, ship.startPos[1]], board,ship)) {
-                        addShipNameToBoard([randomRow, ship.endPos[1]], [randomRow, ship.startPos[1]], board, ship); // pass the arguments in backwards because the ship is added right to left instead
-                        fullShipSpace =false;
-                    }
-                }
+        while (fullShipSpace) {
+            let {randomCol, randomRow, rowLetter} = selectRandomStart(ship);
+            const orientationParam = ship.orientation === 0
+                ? randomCol
+                : randomRow;
+            let shipFits = (orientationParam + ship.shipSize) < board.length ;
+            if (ship.orientation === 0) {
+                shipFits ? ship.endPos = rowLetter + (randomCol + (ship.shipSize - 1))
+                         : ship.endPos = rowLetter + (randomCol - (ship.shipSize - 1))
+            } else {
+                shipFits ? ship.endPos = String.fromCharCode((randomRow + (ship.shipSize - 1)) + 64) + randomCol
+                         : ship.endPos = String.fromCharCode((randomRow - (ship.shipSize - 1)) + 64) + randomCol
             }
-        } else {
-            while (fullShipSpace) {
-                let {randomCol, randomRow} = selectRandomStart(ship);
-                let shipFits = (randomRow+ship.shipSize) < board.length
-                shipFits ? ship.endPos = String.fromCharCode((randomRow+(ship.shipSize-1))+64)+randomCol: ship.endPos = String.fromCharCode((randomRow-(ship.shipSize-1))+64)+ randomCol
-                if (shipFits) {
-                    if(checkForOverlaps([randomRow, ship.startPos[1]], [randomRow + (ship.shipSize - 1), ship.endPos[1]], board,ship)){
-                        addShipNameToBoard([randomRow, ship.startPos[1]], [randomRow + (ship.shipSize - 1), ship.endPos[1]], board, ship);
-                        fullShipSpace =false;
-                    }
-                } else {
-                    if( checkForOverlaps([randomRow + (ship.shipSize - 1), ship.endPos[1]], [randomRow, ship.startPos[1]], board,ship)) {
-                        addShipNameToBoard([randomRow + (ship.shipSize - 1), ship.endPos[1]], [randomRow, ship.startPos[1]], board, ship); // pass the arguments in backwards because the ship is added bot to top instead
-                        fullShipSpace =false;
-                    }
-                }
+            const params = shipFits
+                ? [randomRow, ship.startPos[1], randomRow + (ship.shipSize - 1), ship.endPos[1] ]
+                : [randomRow + (ship.shipSize - 1),ship.endPos[1],randomRow, ship.startPos[1]];
+            if (checkForOverlaps([params[0], params[1]], [params[2], params[3]], ships, ship)) {
+                addShipToBoard([params[0], params[1]], [params[2], params[3]], ships, ship);
+                fullShipSpace = false;
             }
         }
         ships.push(ship.shipLocation);
     }
-    console.log(ships);
-    return ships
+    return ships;
 }
+
 function getRandomIntInclusive(min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);
